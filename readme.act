@@ -1,0 +1,126 @@
+/ ROUTING-ACTOR LANGUAGE
+
+/ Comments begin with a forward slash. The compiler ignores
+/ characters from that point till the end of the line.
+
+/ ROUTING-ACTOR LANGUAGE is made up of two declarative
+/ languages:
+/ 1. RLANG
+/ 2. ALANG
+
+/ RLANG (Routing Language) defines the communication
+/ channels between concurrent actors. Instead of explicitly
+/ defining the pipes connecting actors, the actor's "port"
+/ types define which types of messages will reach which
+/ actors. A port with no peer is a compile error, unless
+/ explicitly marked. When marked, ports with no peers allow
+/ for dynamic linking at runtime.
+
+/ ALANG (Actor Language) defines an actor's behavior and how
+/ it responds to communication from other actors. ALANG is
+/ encapsulated within actor type definitions in RLANG.
+/ NOTE: Currently, ALANG is not defined. Actors must be
+/ implemented as a Golang function.
+
+/ RLANG
+
+/ RLANG is just a sequence of type definitions. Type
+/ definitions have three parts:
+/ 1. base
+/ 2. name
+/ 3. tail
+
+/ The "base" is extremely terse, the shortest being a single
+/ character. There are 7 bases: number, string, list, tuple,
+/ map, message, actor, and script.
+
+/ The "name" is a string of alphanumeric characters and
+/ underscores, where the first character must be a letter.
+/ The combination of base and name uniquely identifies
+/ a type. Type definitions without a name are called
+/ "anonymous".
+
+/ The "tail" is only used by complex type definitions. It's
+/ either one, or two anonymous type definitions.
+
+/ For instance, take this type definition:
+
+$Thing()
+
+/ '$'     is the base.
+/ 'Thing' is the name.
+/ '()'    is the tail.
+
+/ KINDS OF TYPES
+
+/ As implied above, there are several kinds of type
+/ definitions: atomic, structured, and complex. Let's start
+/ by looking at atomic type definitions.
+
+#Count     / Defines a number type.
+@FirstName / Defines a string type.
+
+/ Next, we have structured type definitions.
+
+[@Name]Names      / Defines a list of of strings.
+
+(#Num @Str)MyPair / Defines three types: a number type
+                  / named 'Num', a string type named
+                  / 'Str', and a tuple type named 'MyPair'
+                  / that contains both these types.
+
+<#Key @Val>MyDict / Defines three types: a number type named
+                  / 'Key', a string type named 'Val', and a
+                  / map type named 'MyDict' that contains
+                  / entries of 'Key' pointing to 'Val'.
+
+/ Finally, there are the complex type definitions. All
+/ complex types have a tail.
+
+$Msg (
+ #number
+ @string
+ [(#Num1 #Num2)]tupleList
+)
+
+/ This defines a message type named "OuterMsg". The
+/ contents of the message are defined by a single
+/ anonymous type in the tail, which in this case is a
+/ tuple.
+
+/ Message types define the messages that are sent between
+/ actors.
+
+!Actor ( $Msg ) {}
+
+/ This defines an actor. TODO: explain.
+
+!GroupOne ( $OuterMsg ) (
+  $InnerMsg (
+    <#ID [@]Names>map  
+    |#Num|@Str|enum
+  )
+
+  !Actor1 ( $InnerMsg $OuterMsg ) {
+    // There is someone out there,
+    // actor2.
+  }
+
+  !Actor2 ( $InnerMsg ) {
+    // I can only hear you, 
+    // actor1.
+  }
+)
+
+// This definition is quite complex. Let's take it piece
+// by piece.
+
+!GroupOne ( $OuterMsg ) ( ... )
+
+// This defines an actor named "GroupOne". This is a
+// compound actor because the final tail is a tuple.
+// Had it been an automata then this would be a
+// regular actor.
+
+// ! means a singleton actor.
+// * means an scalaing actor.

@@ -1,0 +1,69 @@
+|- Wish Banana
+
+#  WinCount
+() GetName
+@  Name
+@  OpponentName
+#  CountDown
+() Click
+
+(#You #Them)   Scores
+|()Won|()Lost| GameOver
+
+|- Log is a UTF-8 string that is emitted from actors and
+|- received by the Logger. The Logger prints these Log
+|- messages to the console to aid in debugging.
+
+@Log
+
+|- Conns are emitted from the WebSocket. Other actors can
+|- send a Read message that is a byte copy of the Conn.
+|- The WebSocket will respond with Data messages. The
+|- WebSocket emits Close when a connection has terminated.
+
+!WebSocket(
+  @Conn
+  @Read
+  ( @Conn
+    @Chunk
+  )Data
+  @Close
+  @Log
+){}
+
+|- Queue groups pairs of Conns to be given to a referee.
+|- When a pair is ready, the Queue emits a Game to that is
+|- picked up by a referee.
+
+!Queue(
+  @Conn  
+  @Read
+  ( @Conn
+    @Chunk
+  )Data
+  @Close  
+  ( @Player1
+    @Player2
+  )Game
+  @Log
+){}
+
+|- A Referee is started for each Game that Queue emits. The
+|- Referee sends messages via the Websocket to the two
+|- players, facilitating the game.
+
+*Referee(
+  ( @Player1
+    @Player2
+  )Game
+  ( @Conn
+    @Chunk
+  )Data
+  @Close
+  @Log
+){}
+
+|- The Logger collects Logs from the other actors then
+|- prints them to screen and/or writes them to a file.
+
+!Logger( @Log ){}
