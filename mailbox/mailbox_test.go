@@ -21,7 +21,25 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func TestNewMailBox(t *testing.T) {
+func TestPutAndGet(t *testing.T) {
+	const mailBoxSize = 5
+	const priority = 0
+	const message = "m"
+
+	box := NewMailBox(mailBoxSize)
+
+	box.Put(message, priority)
+	t.Logf("put: '%v'", message)
+
+	received := box.Get(context.Background())
+	t.Logf("got: '%v'", received)
+
+	if received != message {
+		t.Fatalf("'%v' != '%v'", message, received)
+	}
+}
+
+func TestPutThenGet(t *testing.T) {
 	const numOfMessages = 5
 
 	box := NewMailBox(numOfMessages)

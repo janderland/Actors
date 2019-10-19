@@ -74,7 +74,7 @@ func (m MailBox) doSynchronization() {
 			}
 
 			if m.mode == Array {
-				resultCh <- m.queue[0]
+				resultCh <- m.queue[0].contents
 				m.queue = m.queue[1:]
 				break
 			}

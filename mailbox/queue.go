@@ -5,7 +5,6 @@ type priorityQueue []*qItem
 type qItem struct {
 	contents interface{}
 	priority int
-	index    int
 }
 
 func (q priorityQueue) Len() int {
@@ -20,14 +19,10 @@ func (q priorityQueue) Less(i, j int) bool {
 
 func (q priorityQueue) Swap(i, j int) {
 	q[i], q[j] = q[j], q[i]
-	q[i].index = i
-	q[j].index = j
 }
 
 func (q *priorityQueue) Push(x interface{} /* qItem */) {
-	n := len(*q)
 	item := x.(*qItem)
-	item.index = n
 	*q = append(*q, item)
 }
 
@@ -37,7 +32,6 @@ func (q *priorityQueue) Pop() interface{} /* qItem */ {
 	size := len(oldQ)
 	item := oldQ[size-1]
 	oldQ[size-1] = nil // avoid memory leak
-	item.index = -1    // for safety
 	*q = oldQ[0 : size-1]
 	return item
 }
