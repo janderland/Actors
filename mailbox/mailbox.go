@@ -6,64 +6,94 @@ import (
 )
 
 type MailBox struct {
-	queue *priorityQueue
+	queue priorityQueue
+	mode  QMode
 	size  int
-	putCh chan *item
-	getCh chan chan interface{}
-	resultCh chan interface{}
+
+	putCh   chan *qItem
+	getCh   chan ResultCh
+	waiting []ResultCh
 }
 
+type QMode int
+
+const (
+	Array QMode = iota
+	Heap
+)
+
+type ResultCh chan interface{}
+
 func NewMailBox(size int) MailBox {
-	queue := make(priorityQueue, size)
-	heap.Init(&queue)
 	box := MailBox{
-		queue: &queue,
+		queue: nil,
+		mode:  Array,
 		size:  size,
-		putCh: make(chan *item),
-		getCh: make(chan chan interface{}),
+
+		putCh:   make(chan *qItem),
+		getCh:   make(chan ResultCh),
+		waiting: nil,
 	}
-	go box.doOps()
+
+	go box.doSynchronization()
+
 	return box
 }
 
-func (m MailBox) doOps() {
+func (m MailBox) doSynchronization() {
 	for {
 		select {
 		case item := <-m.putCh:
-			if m.resultCh != nil {
-				m.resultCh <- item.contents
-				m.resultCh = nil
+			if len(m.waiting) > 0 {
+				var resultCh ResultCh
+				resultCh, m.waiting = m.waiting[0], m.waiting[1:]
+				resultCh <- item.contents
 				break
 			}
 
-			if m.queue.Len() < m.size {
-				heap.Push(m.queue, item)
+			if m.mode == Array {
+				m.queue.Push(item)
+				if m.queue.Len() > 1 {
+					heap.Init(&m.queue)
+					m.mode = Heap
+				}
+				break
+			}
+
+			if m.mode == Heap {
+				if m.queue.Len() < m.size {
+					heap.Push(&m.queue, item)
+				}
+				break
 			}
 
 		case resultCh := <-m.getCh:
 			if m.queue.Len() == 0 {
-				if m.resultCh != nil {
-					panic("double get")
-				}
-				m.resultCh = resultCh
+				m.waiting = append(m.waiting, resultCh)
 				break
 			}
 
-			item := heap.Pop(m.queue).(*item)
-			resultCh <- item.contents
+			if m.mode == Array {
+				resultCh <- m.queue[0]
+				m.queue = m.queue[1:]
+				break
+			}
+
+			if m.mode == Heap {
+				item := heap.Pop(&m.queue).(*qItem)
+				resultCh <- item.contents
+				break
+			}
 		}
 	}
 }
 
 func (m MailBox) Put(message interface{}, priority int) {
-	m.putCh <- &item{
-		contents: message,
-		priority: priority,
-	}
+	m.putCh <- &qItem{contents: message, priority: priority}
 }
 
 func (m MailBox) Get(ctx context.Context) interface{} {
-	resultCh := make(chan interface{})
+	resultCh := make(ResultCh)
 	m.getCh <- resultCh
 	select {
 	case message := <-resultCh:
