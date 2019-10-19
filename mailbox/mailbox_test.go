@@ -39,7 +39,29 @@ func TestPutAndGet(t *testing.T) {
 	}
 }
 
-func TestPutThenGet(t *testing.T) {
+func TestGetAndPut(t *testing.T) {
+	const mailBoxSize = 5
+	const message = "m"
+	const priority = 0
+
+	box := NewMailBox(mailBoxSize)
+
+	receivedCh := make(chan interface{})
+	go func() {
+		received := box.Get(context.Background())
+		t.Logf("got: '%v'", received)
+		receivedCh <- received
+	}()
+
+	box.Put(message, priority)
+	t.Logf("put: '%v'", message)
+
+	if received := <-receivedCh; received != message {
+		t.Fatalf("'%v' != '%v'", message, received)
+	}
+}
+
+func TestPutsThenGets(t *testing.T) {
 	const numOfMessages = 5
 
 	box := NewMailBox(numOfMessages)
