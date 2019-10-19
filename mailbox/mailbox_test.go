@@ -23,8 +23,8 @@ func TestMain(m *testing.M) {
 
 func TestPutAndGet(t *testing.T) {
 	const mailBoxSize = 5
-	const priority = 0
 	const message = "m"
+	const priority = 0
 
 	box := NewMailBox(mailBoxSize)
 
@@ -52,13 +52,16 @@ func TestPutThenGet(t *testing.T) {
 
 	for _, p := range messages {
 		box.Put(p, p)
+		t.Logf("put: '%v'", p)
 	}
 
-	sort.Sort(sort.IntSlice(messages))
-	t.Logf("Priorities: %v", messages)
+	sort.Sort(sort.Reverse(sort.IntSlice(messages)))
 
-	for range messages {
-		result := box.Get(context.Background())
-		t.Log(result)
+	for i := range messages {
+		received := box.Get(context.Background())
+		t.Logf("got: '%v'", received)
+		if received != messages[i] {
+			t.Fatalf("'%v' != '%v'", messages[i], received)
+		}
 	}
 }
