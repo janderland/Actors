@@ -24,6 +24,19 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
+func TestGet(t *testing.T) {
+	const mailBoxSize = 10
+	box := NewMailBox(mailBoxSize)
+
+	ctx, _ := context.WithTimeout(context.Background(), time.Millisecond)
+	message := box.Get(ctx)
+	t.Logf("got: '%v'", message)
+
+	if message != nil {
+		t.Fatalf("'%v' != 'nil'", message)
+	}
+}
+
 // Test basic operation in `Array` mode.
 func TestPutThenGet(t *testing.T) {
 	t.Logf("seed: %d", *seed)
