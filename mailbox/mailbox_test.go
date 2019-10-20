@@ -11,12 +11,14 @@ import (
 	"time"
 )
 
+var seed *int64
+
 func TestMain(m *testing.M) {
 	const seedFlagName = "seed"
 	const seedFlagUsage = "seeds randomness"
 	seedFlagDefault := time.Now().UTC().UnixNano()
 
-	seed := flag.Int64(seedFlagName, seedFlagDefault, seedFlagUsage)
+	seed = flag.Int64(seedFlagName, seedFlagDefault, seedFlagUsage)
 	rand.Seed(*seed)
 
 	os.Exit(m.Run())
@@ -24,6 +26,8 @@ func TestMain(m *testing.M) {
 
 // Test basic operation in `Array` mode.
 func TestPutThenGet(t *testing.T) {
+	t.Logf("seed: %d", *seed)
+
 	const mailBoxSize = 5
 	const message = "msg"
 	const priority = 0
@@ -43,6 +47,8 @@ func TestPutThenGet(t *testing.T) {
 
 // Test basic operation in `Array` mode.
 func TestGetThenPut(t *testing.T) {
+	t.Logf("seed: %d", *seed)
+
 	const mailBoxSize = 5
 	const message = "msg"
 	const priority = 0
@@ -66,6 +72,8 @@ func TestGetThenPut(t *testing.T) {
 
 // Test basic operation in `Heap` mode.
 func TestPutsThenGets(t *testing.T) {
+	t.Logf("seed: %d", *seed)
+
 	const numOfMessages = 5
 
 	box := NewMailBox(numOfMessages)
@@ -94,6 +102,8 @@ func TestPutsThenGets(t *testing.T) {
 }
 
 func TestConcurrently(t *testing.T) {
+	t.Logf("seed: %d", *seed)
+
 	const maxNumOfMessages = 50
 	numOfMessages := rand.Intn(maxNumOfMessages) + 1
 	t.Logf("Num Of Messages: %d", numOfMessages)
