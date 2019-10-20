@@ -6,13 +6,10 @@ import (
 	"github.com/janderland/Actors/mailbox"
 	"github.com/janderland/Actors/messages"
 	"log"
-	"net/http"
 	"sync"
 )
 
-type State struct {
-	http.Server
-}
+type State struct{}
 
 type Peers struct {
 	Conn [1]mailbox.PeerMailBox
@@ -38,24 +35,33 @@ func (a *Actor) Act(ctx context.Context, group *sync.WaitGroup) {
 			log.Println("WebSocket: Stopping.")
 			return
 		}
-		switch received.(type) {
-		case messages.Accept:
-			const logFmt = "WebSocket: Got @Accept '%v'"
-			log.Printf(logFmt, received)
-			accept := received.(messages.Accept)
-			toSend, state := a.Handlers.Accept(accept, a.State)
-			a.State = state
-			a.send(toSend)
-		default:
-			const logFmt = "WebSocket: Ignoring %T '%v'"
-			log.Printf(logFmt, received, received)
-		}
+		toSend, state := a.handle(received)
+		a.State = state
+		a.send(toSend)
 	}
+}
+
+func (a *Actor) handle(received interface{}) ([]interface{}, State) {
+	switch received.(type) {
+
+	case messages.Accept:
+		const logFmt = "WebSocket: Got @Accept '%v'"
+		log.Printf(logFmt, received)
+		accept := received.(messages.Accept)
+		return a.Handlers.Accept(accept, a.State)
+
+	default:
+		const logFmt = "WebSocket: Ignoring %T '%v'"
+		log.Printf(logFmt, received, received)
+	}
+
+	return nil, a.State
 }
 
 func (a *Actor) send(toSend []interface{}) {
 	for _, message := range toSend {
 		switch message.(type) {
+
 		case messages.Conn:
 			conn := message.(messages.Conn)
 			for _, peer := range a.Peers.Conn {
@@ -63,6 +69,7 @@ func (a *Actor) send(toSend []interface{}) {
 			}
 			const logFmt = "WebSocket: Put @Conn '%v'"
 			log.Printf(logFmt, message)
+
 		case messages.Data:
 			data := message.(messages.Data)
 			for _, peer := range a.Peers.Data {
@@ -70,6 +77,7 @@ func (a *Actor) send(toSend []interface{}) {
 			}
 			const logFmt = "WebSocket: Put @Data '%v'"
 			log.Printf(logFmt, message)
+
 		default:
 			const logFmt = "WebSocket: Bad Send %T '%v'"
 			panic(fmt.Sprintf(logFmt, message, message))
