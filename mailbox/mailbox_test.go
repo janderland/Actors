@@ -47,7 +47,7 @@ func TestPutThenGet(t *testing.T) {
 
 	box := NewMailBox(mailBoxSize)
 
-	box.Put(message, priority)
+	box.Put(Message{message, priority})
 	t.Logf("put: '%v'", message)
 
 	received := box.Get(context.Background())
@@ -75,7 +75,7 @@ func TestGetThenPut(t *testing.T) {
 		receivedCh <- received
 	}()
 
-	box.Put(message, priority)
+	box.Put(Message{message, priority})
 	t.Logf("put: '%v'", message)
 
 	if received := <-receivedCh; received != message {
@@ -99,7 +99,7 @@ func TestPutsThenGets(t *testing.T) {
 	}
 
 	for _, p := range messages {
-		box.Put(p, p)
+		box.Put(Message{p, p})
 		t.Logf("put: '%v'", p)
 	}
 
@@ -181,7 +181,7 @@ func TestConcurrently(t *testing.T) {
 				ch := make(chan int)
 				requestMsgCh <- ch
 				message := <-ch
-				box.Put(message, message)
+				box.Put(Message{message, message})
 				t.Logf("put: '%v'", message)
 			}
 		}()

@@ -9,7 +9,7 @@ func (q priorityQueue) Len() int {
 func (q priorityQueue) Less(i, j int) bool {
 	// Use 'greater than' here because we want higher priorities to pop first.
 	// The container.heap is designed to pop the lowest priority value first.
-	return q[i].priority > q[j].priority
+	return q[i].Priority > q[j].Priority
 }
 
 func (q priorityQueue) Swap(i, j int) {

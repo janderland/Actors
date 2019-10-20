@@ -6,7 +6,7 @@ import (
 )
 
 type MailBox struct {
-	PeerBox
+	PeerMailBox
 
 	queue priorityQueue
 	mode  QMode
@@ -17,13 +17,13 @@ type MailBox struct {
 	waiting []ResultCh
 }
 
-type PeerBox interface {
+type PeerMailBox interface {
 	Put(message Message)
 }
 
 type Message struct {
-	contents interface{}
-	priority int
+	Contents interface{}
+	Priority int
 }
 
 // The MailBox uses it's internal priorityQueue in two different ways: as an
@@ -61,7 +61,7 @@ func (m MailBox) doSynchronization() {
 			if len(m.waiting) > 0 {
 				var resultCh ResultCh
 				resultCh, m.waiting = m.waiting[0], m.waiting[1:]
-				resultCh <- item.contents
+				resultCh <- item.Contents
 				break
 			}
 
@@ -88,14 +88,14 @@ func (m MailBox) doSynchronization() {
 			}
 
 			if m.mode == Array {
-				resultCh <- m.queue[0].contents
+				resultCh <- m.queue[0].Contents
 				m.queue = m.queue[1:]
 				break
 			}
 
 			if m.mode == Heap {
-				item := heap.Pop(&m.queue).(*Message)
-				resultCh <- item.contents
+				message := heap.Pop(&m.queue).(*Message)
+				resultCh <- message.Contents
 				break
 			}
 		}
@@ -110,8 +110,8 @@ func (m MailBox) Get(ctx context.Context) interface{} {
 	resultCh := make(ResultCh)
 	m.getCh <- resultCh
 	select {
-	case message := <-resultCh:
-		return message
+	case contents := <-resultCh:
+		return contents
 	case <-ctx.Done():
 		return nil
 	}
