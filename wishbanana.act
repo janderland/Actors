@@ -17,13 +17,13 @@
 @Log
 
 |- Conns are emitted from the WebSocket. Other actors can
-|- send a Read message that is a byte copy of the Conn.
+|- send a Accept message that is a byte copy of the Conn.
 |- The WebSocket will respond with Data messages. The
 |- WebSocket emits Close when a connection has terminated.
 
 !WebSocket(
   @Conn
-  @Read
+  @Accept
   ( @Conn
     @Chunk
   )Data
@@ -37,7 +37,7 @@
 
 !Queue(
   @Conn  
-  @Read
+  @Accept
   ( @Conn
     @Chunk
   )Data
@@ -49,7 +49,7 @@
 ){}
 
 |- A Referee is started for each Game that Queue emits. The
-|- Referee sends messages via the Websocket to the two
+|- Referee sends messages via the WebSocket to the two
 |- players, facilitating the game.
 
 *Referee(
