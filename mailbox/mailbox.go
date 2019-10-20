@@ -6,15 +6,29 @@ import (
 )
 
 type MailBox struct {
+	PeerBox
+
 	queue priorityQueue
 	mode  QMode
 	size  int
 
-	putCh   chan *qItem
+	putCh   chan *Message
 	getCh   chan ResultCh
 	waiting []ResultCh
 }
 
+type PeerBox interface {
+	Put(message Message)
+}
+
+type Message struct {
+	contents interface{}
+	priority int
+}
+
+// The MailBox uses it's internal priorityQueue in two different ways: as an
+// array or as a heap. This is because the `container.heap` implementation
+// doesn't initialize properly unless the heap has more than 2 items.
 type QMode int
 
 const (
@@ -30,7 +44,7 @@ func NewMailBox(size int) MailBox {
 		mode:  Array,
 		size:  size,
 
-		putCh:   make(chan *qItem),
+		putCh:   make(chan *Message),
 		getCh:   make(chan ResultCh),
 		waiting: nil,
 	}
@@ -80,7 +94,7 @@ func (m MailBox) doSynchronization() {
 			}
 
 			if m.mode == Heap {
-				item := heap.Pop(&m.queue).(*qItem)
+				item := heap.Pop(&m.queue).(*Message)
 				resultCh <- item.contents
 				break
 			}
@@ -88,8 +102,8 @@ func (m MailBox) doSynchronization() {
 	}
 }
 
-func (m MailBox) Put(message interface{}, priority int) {
-	m.putCh <- &qItem{contents: message, priority: priority}
+func (m MailBox) Put(message Message) {
+	m.putCh <- &message
 }
 
 func (m MailBox) Get(ctx context.Context) interface{} {

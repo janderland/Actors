@@ -1,11 +1,6 @@
 package mailbox
 
-type priorityQueue []*qItem
-
-type qItem struct {
-	contents interface{}
-	priority int
-}
+type priorityQueue []*Message
 
 func (q priorityQueue) Len() int {
 	return len(q)
@@ -21,13 +16,12 @@ func (q priorityQueue) Swap(i, j int) {
 	q[i], q[j] = q[j], q[i]
 }
 
-func (q *priorityQueue) Push(x interface{} /* qItem */) {
-	item := x.(*qItem)
+func (q *priorityQueue) Push(x interface{} /* Message */) {
+	item := x.(*Message)
 	*q = append(*q, item)
 }
 
-// Returns a *qItem.
-func (q *priorityQueue) Pop() interface{} /* qItem */ {
+func (q *priorityQueue) Pop() interface{} /* Message */ {
 	oldQ := *q
 	size := len(oldQ)
 	item := oldQ[size-1]
