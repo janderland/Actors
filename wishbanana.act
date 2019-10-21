@@ -1,69 +1,75 @@
-|- Wish Banana
+-- Wish Banana
 
-#  WinCount
-() GetName
-@  Name
-@  OpponentName
-#  CountDown
-() Click
+-- WebSocket listens for new connections, announcing them
+-- via the `Conn` message. Other actors can respond with an
+-- `Accept` message to open the new connection. `Close`
+-- messages are used to signal that a client closed the
+-- connection or that another actor wants to close the
+-- connection.
 
-(#You #Them)   Scores
-|()Won|()Lost| GameOver
+! (@Addr)Conn
+  (@Addr)Accept
+  (@Addr @String)Data
+  (@Addr)Close
+  (@Msg @Origin #Level)Log
+  {}
+!WebSocket
 
-|- Log is a UTF-8 string that is emitted from actors and
-|- received by the Logger. The Logger prints these Log
-|- messages to the console to aid in debugging.
 
-@Log
+-- Translator converts `Data` messages into one of the
+-- WishBanana messages, and vice-versa.
 
-|- Conns are emitted from the WebSocket. Other actors can
-|- send a Accept message that is a byte copy of the Conn.
-|- The WebSocket will respond with Data messages. The
-|- WebSocket emits Close when a connection has terminated.
+* (@Addr @String)Data
+  (@Addr #Count)WinCount
+  (@Addr)GetName
+  (@Addr @Name)PutName
+  (@Addr @Name)OpponentName
+  (@Addr #Count)CountDown
+  (@Addr)Click
+  (#You #Them)Scores
+  |()Won ()Lost|GameOver
+  (@Msg @Origin #Level)Log
+  {}
+*Translator
 
-!WebSocket(
-  @Conn
-  @Accept
-  ( @Conn
-    @Chunk
-  )Data
-  @Close
-  @Log
-){}
 
-|- Queue groups pairs of Conns to be given to a referee.
-|- When a pair is ready, the Queue emits a Game to that is
-|- picked up by a referee.
+-- Queue accepts connection as they arrive. Every two
+-- connections are paired up into a game.
 
-!Queue(
-  @Conn  
-  @Accept
-  ( @Conn
-    @Chunk
-  )Data
-  @Close  
-  ( @Player1
-    @Player2
-  )Game
-  @Log
-){}
+! (@Addr)Conn
+  (@Addr)Accept
+  (@Addr)Close
+  (@Addr1 @Addr2)Game
+  (@Msg @Origin #Level)Log
+  {}
+!Queue
 
-|- A Referee is started for each Game that Queue emits. The
-|- Referee sends messages via the WebSocket to the two
-|- players, facilitating the game.
 
-*Referee(
-  ( @Player1
-    @Player2
-  )Game
-  ( @Conn
-    @Chunk
-  )Data
-  @Close
-  @Log
-){}
+-- Referee facilitates a game between two connections.
 
-|- The Logger collects Logs from the other actors then
-|- prints them to screen and/or writes them to a file.
+* (@Addr1 @Addr2)Game
+  (@Addr)Close
+  (@Addr #Count)WinCount
+  (@Addr)GetName
+  (@Addr @Name)PutName
+  (@Addr @Name)OpponentName
+  (@Addr #Count)CountDown
+  (@Addr)Click
+  (#You #Them)Scores
+  |()Won ()Lost|GameOver
+  (@Msg @Origin #Level)Log
+  {}
+*Referee
 
-!Logger( @Log ){}
+
+! (#Millis {}Action @Origin)Timeout
+  {}
+!Timer
+
+
+-- The Logger collects Logs from the other actors then
+-- prints them to screen and/or writes them to a file.
+
+! (@Msg #Level @Origin)Log
+  {}
+!Logger
