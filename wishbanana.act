@@ -7,11 +7,12 @@
 -- connection or that another actor wants to close the
 -- connection.
 
-! (@Addr)Conn
-  (@Addr)Accept
-  (@Addr @String)Data
-  (@Addr)Close
-  (@Msg @Origin #Level)Log
+! ( (@Addr)Conn
+    (@Addr)Accept
+    (@Addr)Close
+    (@Addr @String)Data
+    (@Msg @Origin #Level)Log
+  )
   {}
 !WebSocket
 
@@ -19,16 +20,17 @@
 -- Translator converts `Data` messages into one of the
 -- WishBanana messages, and vice-versa.
 
-* (@Addr @String)Data
-  (@Addr #Count)WinCount
-  (@Addr)GetName
-  (@Addr @Name)PutName
-  (@Addr @Name)OpponentName
-  (@Addr #Count)CountDown
-  (@Addr)Click
-  (#You #Them)Scores
-  |()Won ()Lost|GameOver
-  (@Msg @Origin #Level)Log
+* ( (@Addr @String)Data
+    (@Addr #Count)WinCount
+    (@Addr)GetName
+    (@Addr @Name)PutName
+    (@Addr @Name)OpponentName
+    (@Addr #Count)CountDown
+    (@Addr)Click
+    (#You #Them)Scores
+    |()Won ()Lost|GameOver
+    (@Msg @Origin #Level)Log
+  )
   {}
 *Translator
 
@@ -36,33 +38,35 @@
 -- Queue accepts connection as they arrive. Every two
 -- connections are paired up into a game.
 
-! (@Addr)Conn
-  (@Addr)Accept
-  (@Addr)Close
-  (@Addr1 @Addr2)Game
-  (@Msg @Origin #Level)Log
+! ( (@Addr)Conn
+    (@Addr)Accept
+    (@Addr)Close
+    (@Addr1 @Addr2)Game
+    (@Msg @Origin #Level)Log
+  )
   {}
 !Queue
 
 
 -- Referee facilitates a game between two connections.
 
-* (@Addr1 @Addr2)Game
-  (@Addr)Close
-  (@Addr #Count)WinCount
-  (@Addr)GetName
-  (@Addr @Name)PutName
-  (@Addr @Name)OpponentName
-  (@Addr #Count)CountDown
-  (@Addr)Click
-  (#You #Them)Scores
-  |()Won ()Lost|GameOver
-  (@Msg @Origin #Level)Log
+* ( (@Addr1 @Addr2)Game
+    (@Addr)Close
+    (@Addr #Count)WinCount
+    (@Addr)GetName
+    (@Addr @Name)PutName
+    (@Addr @Name)OpponentName
+    (@Addr #Count)CountDown
+    (@Addr)Click
+    (#You #Them)Scores
+    |()Won ()Lost|GameOver
+    (@Msg @Origin #Level)Log
+  )
   {}
 *Referee
 
 
-! (#Millis {}Action @Origin)Timeout
+! ((#Millis {}Action @Origin)Timeout)
   {}
 !Timer
 
@@ -70,6 +74,6 @@
 -- The Logger collects Logs from the other actors then
 -- prints them to screen and/or writes them to a file.
 
-! (@Msg #Level @Origin)Log
+! ((@Msg #Level @Origin)Log)
   {}
 !Logger
