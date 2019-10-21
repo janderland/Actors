@@ -58,7 +58,7 @@ func TestAccept(t *testing.T) {
 			Conn: [1]mailbox.PeerMailBox{connBox},
 			Data: [1]mailbox.PeerMailBox{dataBox},
 		},
-		Handlers: Handlers{
+		Mutators: Mutators{
 			Accept: func(in messages.Accept, old State) ([]interface{}, State) {
 				if !bytes.Equal(in, accept) {
 					t.Fatalf("'%v' != '%v'", in, accept)

@@ -9,6 +9,8 @@ import (
 	"sync"
 )
 
+const Name = "WebSocket"
+
 type State struct{}
 
 type Peers struct {
@@ -16,7 +18,7 @@ type Peers struct {
 	Data [1]mailbox.PeerMailBox
 }
 
-type Handlers struct {
+type Mutators struct {
 	Accept func(messages.Accept, State) ([]interface{}, State)
 }
 
@@ -24,7 +26,7 @@ type Actor struct {
 	State    State
 	MailBox  mailbox.MailBox
 	Peers    Peers
-	Handlers Handlers
+	Mutators Mutators
 }
 
 func (a *Actor) Act(ctx context.Context, group *sync.WaitGroup) {
@@ -32,27 +34,28 @@ func (a *Actor) Act(ctx context.Context, group *sync.WaitGroup) {
 	for {
 		received := a.MailBox.Get(ctx)
 		if received == nil {
-			log.Println("WebSocket: Stopping.")
+			a.trace("Stopping")
 			return
 		}
-		toSend, state := a.handle(received)
+		toSend, state := a.mutate(received)
 		a.State = state
 		a.send(toSend)
 	}
 }
 
-func (a *Actor) handle(received interface{}) ([]interface{}, State) {
+func (a *Actor) mutate(received interface{}) ([]interface{}, State) {
 	switch received.(type) {
 
 	case messages.Accept:
-		const logFmt = "WebSocket: Got @Accept '%v'"
-		log.Printf(logFmt, received)
+		const logFmt = "Got @Accept '%v'"
+		a.trace(logFmt, received)
+
 		accept := received.(messages.Accept)
-		return a.Handlers.Accept(accept, a.State)
+		return a.Mutators.Accept(accept, a.State)
 
 	default:
-		const logFmt = "WebSocket: Ignoring %T '%v'"
-		log.Printf(logFmt, received, received)
+		const logFmt = "Ignoring %T '%v'"
+		a.trace(logFmt, received, received)
 	}
 
 	return nil, a.State
@@ -68,7 +71,7 @@ func (a *Actor) send(toSend []interface{}) {
 				peer.Put(conn.Pack())
 			}
 			const logFmt = "WebSocket: Put @Conn '%v'"
-			log.Printf(logFmt, message)
+			a.trace(logFmt, message)
 
 		case messages.Data:
 			data := message.(messages.Data)
@@ -76,11 +79,21 @@ func (a *Actor) send(toSend []interface{}) {
 				peer.Put(data.Pack())
 			}
 			const logFmt = "WebSocket: Put @Data '%v'"
-			log.Printf(logFmt, message)
+			a.trace(logFmt, message)
 
 		default:
 			const logFmt = "WebSocket: Bad Send %T '%v'"
-			panic(fmt.Sprintf(logFmt, message, message))
+			a.panic(logFmt, message, message)
 		}
 	}
+}
+
+func (a *Actor) trace(format string, v ...interface{}) {
+	msg := fmt.Sprintf(format, v...)
+	log.Printf("%s, %s", Name, msg)
+}
+
+func (a *Actor) panic(format string, v ...interface{}) {
+	msg := fmt.Sprintf(format, v...)
+	panic(fmt.Sprintf("%s: %s", Name, msg))
 }
